@@ -71,6 +71,7 @@ script_version="1.3"
 local dummy_duration=600  --maximum dummy video duration threshold (second)
 local neroquality=0.85
 include("utils.lua")
+include("lfs.lua")
 
 function encode_vs(subs,sel)
 	P=""
@@ -82,6 +83,7 @@ function encode_vs(subs,sel)
 	csripath=ADP("?data").."\\csri\\"
 	enconfig=ADP("?user").."\\encode_hardsub_vs.conf"
 	scriptpath=ADP("?script").."\\"
+	lfs.chdir(scriptpath)
 	scriptname=aegisub.file_name()
 	vpath=ADP("?video").."\\"
 	apath=ADP("?audio").."\\"
@@ -94,17 +96,17 @@ function encode_vs(subs,sel)
 	if file~=nil then
 		konf=file:read("*all")
 		io.close(file)
-		NegaEncpath=konf:match("NegaEncpath:(.-)\n")
-		xpath=konf:match("xpath:(.-)\n")
-		VSPipepath=konf:match("VSPipepath:(.-)\n")
-		nvencpath=konf:match("nvencpath:(.-)\n")
-		qsvencpath=konf:match("qsvencpath:(.-)\n")
-		vceencpath=konf:match("vceencpath:(.-)\n")
+		NegaEncpath=gap(konf:match("NegaEncpath:(.-)\n"))
+		xpath=gap(konf:match("xpath:(.-)\n"))
+		VSPipepath=gap(konf:match("VSPipepath:(.-)\n"))
+		nvencpath=gap(konf:match("nvencpath:(.-)\n"))
+		qsvencpath=gap(konf:match("qsvencpath:(.-)\n"))
+		vceencpath=gap(konf:match("vceencpath:(.-)\n"))
 		GPUs=konf:match("GPUs:(.-)\n")
 		sett=konf:match("enc_sets:(.-)\n")
-		vsfpath=konf:match("vsfpath:(.-)\n")
-		vsfmpath=konf:match("vsfmpath:(.-)\n")
-		ffmpegpath=konf:match("ffmpegpath:(.-)\n") or ""
+		vsfpath=gap(konf:match("vsfpath:(.-)\n"))
+		vsfmpath=gap(konf:match("vsfmpath:(.-)\n"))
+		ffmpegpath=gap(konf:match("ffmpegpath:(.-)\n")) or ""
 		vtype=konf:match("vtype:(.-)\n")
 		vsf1=konf:match("filter1:(.-)\n")
 		vsf2=konf:match("filter2:(.-)\n")
@@ -156,6 +158,8 @@ function encode_vs(subs,sel)
 		efr=ms2fr(endt)
 	if sfr<sframe then sframe=sfr end
 	if efr>eframe then eframe=efr end
+	vfull=vpath..videoname
+	afull=apath..audioname
 	end
 	
 	require("enc_gui")
@@ -246,7 +250,7 @@ function encode_vs(subs,sel)
 	end
 
 	if P=="Save" then
-		konf="NegaEncpath:"..res.NegaEncpath.."\nxpath:"..res.xpath.."\nVSPipepath:"..res.VSPipepath.."\nnvencpath:"..res.nvencpath.."\nqsvencpath:"..res.qsvencpath.."\nvceencpath:"..res.vceencpath.."\nvsfpath:"..res.vsf.."\nvsfmpath:"..res.vsfm.."\nffmpegpath:"..res.ffmpeg.."\nvtype:"..res.vtype.."\nfilter1:"..res.filter1.."\nfilter2:"..res.filter2.."\ntarg:"..res.targ.."\ntarget:"..res.target.."\nGPUs:"..res.GPUs.."\n"
+		konf="NegaEncpath:"..grp(res.NegaEncpath).."\nxpath:"..grp(res.xpath).."\nVSPipepath:"..grp(res.VSPipepath).."\nnvencpath:"..grp(res.nvencpath).."\nqsvencpath:"..grp(res.qsvencpath).."\nvceencpath:"..grp(res.vceencpath).."\nvsfpath:"..grp(res.vsf).."\nvsfmpath:"..grp(res.vsfm).."\nffmpegpath:"..grp(res.ffmpeg).."\nvtype:"..res.vtype.."\nfilter1:"..res.filter1.."\nfilter2:"..res.filter2.."\ntarg:"..res.targ.."\ntarget:"..res.target.."\nGPUs:"..res.GPUs.."\n"
 
 		file=io.open(enconfig,"w")
 		file:write(konf)
@@ -268,8 +272,6 @@ function encode_vs(subs,sel)
 	else
 		target=scriptpath
 	end
-	vfull=vpath..videoname
-	afull=apath..audioname
 	vsm=0
 	if res.targ=="Custom:" then target=res.target end
 	if res.filter1=="none" then res.sec=false encname=encname:gsub("_hardsub","_encode") end
@@ -535,6 +537,32 @@ function encode_vs(subs,sel)
 	    batch=batch:gsub("%=","^=")
 	    os.execute(quo(batch))
 	end
+end
+
+function gap(path)
+	if path==nil or path=="" then
+		return path
+	end
+
+	file=io.open(path)
+	if file==nil then
+		path=aegisub.decode_path("?data").."\\"..path
+	else
+		file.close()
+	end
+	return path
+end
+
+function grp(path)
+	if path==nil or path=="" then
+		return path
+	end
+	abs_len=string.len(aegisub.decode_path("?data"))
+	temp=string.sub(path, 0, abs_len)
+	if temp==aegisub.decode_path("?data") then
+		path=string.sub(path, abs_len+2)
+	end
+	return path
 end
 
 function encode_bat(exe,first_time,from_setting)
