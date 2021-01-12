@@ -554,13 +554,14 @@ function gap(path)
 end
 
 function grp(path)
-	if path==nil or path=="" then
-		return path
-	end
-	abs_len=string.len(aegisub.decode_path("?data"))
-	temp=string.sub(path, 0, abs_len)
-	if temp==aegisub.decode_path("?data") then
-		path=string.sub(path, abs_len+2)
+	if path~=nil or path~="" then
+		abs_len=string.len(aegisub.decode_path("?data"))
+		if abs_len<string.len(path) then
+			temp=string.sub(path, 0, abs_len)
+			if temp==aegisub.decode_path("?data") then
+				path=string.sub(path, abs_len+2)
+			end
+		end
 	end
 	return path
 end
